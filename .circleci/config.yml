@@ -9,7 +9,7 @@ defaults: &defaults
     PHPUNIT_ARGS: ""
     PHP_SENDMAIL_PATH: /dev/null
     # https://drupal.slack.com/archives/CGKLP028K/p1702031434143329?thread_ts=1702024395.751479&cid=CGKLP028K
-    WODBY_TAG: 8.2
+    WODBY_TAG: 8.4
     # These are not working. We disable the mode in .docker/zz-php.ini
     PHP_EXTENSIONS_DISABLE: xdebug
     PHP_XDEBUG_MODE: off
@@ -92,7 +92,7 @@ jobs:
   code_style:
     <<: *defaults
     docker:
-      - image: wodby/php:8.2
+      - image: wodby/php:8.4
     steps:
       - checkout
       - run: cp .docker/zz-php.ini /usr/local/etc/php/conf.d/
