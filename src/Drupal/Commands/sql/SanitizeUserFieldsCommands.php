@@ -49,6 +49,7 @@ final class SanitizeUserFieldsCommands extends DrushCommands implements Sanitize
     public function sanitize($result, CommandData $commandData): void
     {
         $options = $commandData->options();
+        $restricted_length_fields = explode(',', $options['restricted-length-fields']);
         $conn = $this->getDatabase();
         $field_definitions = $this->getEntityFieldManager()->getFieldDefinitions('user', 'user');
         $field_storage = $this->getEntityFieldManager()->getFieldStorageDefinitions('user');
@@ -68,6 +69,10 @@ final class SanitizeUserFieldsCommands extends DrushCommands implements Sanitize
             $field_type_class = \Drupal::service('plugin.manager.field.field_type')->getPluginClass($def->getType());
             $supported_field_types = ['email', 'string', 'string_long', 'telephone', 'text', 'text_long', 'text_with_summary'];
             if (in_array($def->getType(), $supported_field_types)) {
+                if (in_array($def->getName(), $restricted_length_fields)) {
+                    // Pretend this field is a short (single word) field.
+                    $def->setSetting('max_length', 15);
+                }
                 $value_array = $field_type_class::generateSampleValue($def);
                 $value = $value_array['value'];
             }
@@ -123,11 +128,16 @@ final class SanitizeUserFieldsCommands extends DrushCommands implements Sanitize
     public function messages(&$messages, InputInterface $input): void
     {
         $messages[] = dt('Sanitize text fields associated with users.');
+        if ($restricted_length_fields = $input->getOption('restricted-length-fields')) {
+            $restricted_length_fields = explode(',', $restricted_length_fields);
+            $messages[] = dt('Treat ' . implode(', ', $restricted_length_fields) . ' as single word text fields.');
+        }
     }
 
     #[CLI\Hook(type: HookManager::OPTION_HOOK, target: SanitizeCommands::SANITIZE)]
     #[CLI\Option(name: 'allowlist-fields', description: 'A comma delimited list of fields exempt from sanitization.')]
-    public function options($options = ['allowlist-fields' => '']): void
+    #[CLI\Option(name: 'restricted-length-fields', description: 'A comma delimited list of fields which should be considered restricted in length.')]
+    public function options($options = ['allowlist-fields' => '', 'restricted-length-fields' => '']): void
     {
     }
 }
